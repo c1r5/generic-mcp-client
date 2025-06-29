@@ -1,13 +1,15 @@
 import asyncio
 import json
 import logging
-from contextlib import AsyncExitStack
-from mcp_client import close_mcp_client, create_mcp_client
+
+from mcp_agent import create_mcp_agent
+from mcp_client import MCPClient
+
 
 logger = logging.getLogger(__name__)
 
 
-async def chat_loop():
+def chat_loop():
     """Run an interactive chat loop"""
     print("\n🤖 MCP Client Started!")
     print("Type your queries or 'quit' to exit.")
@@ -27,22 +29,31 @@ async def main():
     with open(".vscode/mcp.json", "r") as f:
         data = json.load(f)["servers"]
 
-    async with AsyncExitStack() as exit_stack:
-        try:
-            await create_mcp_client(data, exit_stack)
+    mcp_agent = await create_mcp_agent(data)
+    mcp_client = MCPClient(agent=mcp_agent)
+    await mcp_client.create_session()
 
-            async for query in chat_loop():
-                print(f"📨 Você perguntou: {query}")
-                # Aqui você pode chamar algo como: await mcp_client.ask(query)
+    try:
+        for query in chat_loop():
+            async for response in mcp_client.ask(query):
+                print(response)
+            
+    except KeyboardInterrupt as e:
+        logger.error("❌ Execução interrompida pelo usuário")
 
-        except Exception as e:
-            logger.error("❌ Erro durante execução do MCP:", exc_info=e)
-
-        finally:
-            await close_mcp_client(exit_stack)
+    finally:
+        await mcp_client.close()
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main())
+    try:
+        logging.basicConfig(
+            level=logging.INFO,
+            filename='.logs/logs.txt',
+            filemode='a',  # or 'w' to overwrite on every run
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+        asyncio.run(main())
+    except Exception as e:
+        logger.info("bye")
 
