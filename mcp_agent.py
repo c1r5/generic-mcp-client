@@ -52,6 +52,7 @@ def _load_mcp_toolset(connection: Connection) -> MCPToolset:
         case "stdio":
             return MCPToolset(
                 connection_params=StdioConnectionParams(
+                    timeout=60,
                     server_params=StdioServerParameters(
                         command=connection["command"],
                         args=connection["args"],
@@ -102,7 +103,7 @@ async def create_mcp_agent(mcp_config: MCPServerConfig):
         logger.info(f"Discovered and Loaded {len(toolset)} tools")
         
         agent = Agent(
-            model='gemini-2.0-flash',
+            model='gemini-1.5-pro-002',
             name='personal_generic_agent',
             tools=[*toolset],
             generate_content_config=gen_config,
