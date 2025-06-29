@@ -40,3 +40,8 @@ class MCPClient:
             
     async def close(self):
         await self.runner.close()
+        await self.runner.session_service.delete_session(
+            app_name=self.session.app_name,
+            user_id=self.session.user_id,
+            session_id=self.session.id
+        )
